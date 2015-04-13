@@ -1,0 +1,237 @@
+(function (factory) {
+
+    // CommonJS
+    if (typeof exports == "object") {
+        module.exports = factory(require("underscore"), require("backbone"));
+    }
+    // AMD
+    else if (typeof define == "function" && define.amd) {
+        define(["underscore", "backbone"], factory);
+    }
+    // Browser
+    else if (typeof _ !== "undefined" && typeof Backbone !== "undefined") {
+        Nukulus = factory(_, Backbone);
+    }
+
+}(function (_, Backbone) {
+
+    "use strict";
+
+    var Nukulus = function Nukulus(socket) {
+        this.socket = socket;
+    };
+
+    /**
+     * Overrides Backbone.sync implementation
+     * @param {string} method
+     * @param {Backbone.Model} model
+     * @param {object} options
+     * @return {object} promise
+     */
+    var NukulusSync = function (method, model, options) {
+        options || (options = {});
+
+        var success = options.success || function () {};
+        var error = options.error || function () {};
+
+        delete options.success;
+        delete options.error;
+
+        var deferred = $.Deferred();
+
+        if (method === 'read' && !model.id) {
+            method = 'list';
+        }
+
+        this.resource.sync(method, model, options, function (err, res) {
+            if (err) {
+                error(err);
+                deferred.reject(err);
+            } else {
+                success(res);
+                deferred.resolve(res);
+            }
+        });
+
+        return deferred.promise();
+    };
+
+    /**
+     * Extended version of Backbone.Model to implement Nukulus's sync
+     */
+    var NukulusModel = Backbone.Model.extend({
+        sync: NukulusSync,
+
+        constructor: function (models, options) {
+            Backbone.Model.prototype.constructor.apply(this, arguments);
+
+            options = options || {};
+
+            this.resource = options.resource || null;
+        },
+
+        /**
+         * Set the resource to which the model is bound
+         * @param {Object} resource
+         * @return {void}
+         */
+        setResource: function (resource) {
+            this.resource = resource;
+        }
+    });
+
+    /**
+     * Extended version of Backbone.Collection to implement Nukulu's sync
+     */
+    var NukulusCollection = Backbone.Collection.extend({
+        sync: NukulusSync,
+        model: NukulusModel,
+
+        /**
+         * Overrides Backbone.Collection constructor
+         * @param  {array} models
+         * @param  {object} options
+         * @return {void}
+         */
+        constructor: function (models, options) {
+            Backbone.Collection.prototype.constructor.apply(this, arguments);
+
+            options = options || {};
+
+            this.resource = options.resource || null;
+
+            var _this = this;
+
+            // Aggiungo un riferimento alla risorsa al modello aggiunto
+            this.on('add', function(model) {
+                model.setResource(_this.resource);
+            });
+        }
+    });
+
+    /**
+     * Basic Nukulus Entities
+     */
+    Nukulus.prototype.Entities = {
+        Collection: NukulusCollection,
+        Model: NukulusModel
+    };
+
+    /**
+     * Sync an existing Backbone.Collection with a given resource
+     * @param  {Backbone.Collection} collection
+     * @param  {object} resource
+     * @return {void}
+     */
+    Nukulus.prototype.syncCollection = function (collection, resource) {
+        var proto = Object.getPrototypeOf(collection);
+        proto.model = proto.model.extend({ sync: NukulusSync });
+        collection.sync = NukulusSync;
+        collection.resource = resource;
+
+        this._bindCollectionEvents(resource, collection);
+    };
+
+    /**
+     * Create a new Nukulus Collection bound to the given resource
+     * @param  {ojbect} resource
+     * @return {NukulusCollection}
+     */
+    Nukulus.prototype.bindCollection = function (resource) {
+        var collection = new this.Entities.Collection([], {
+            resource: resource
+        });
+
+        this._bindCollectionEvents(resource, collection);
+
+        collection.fetch();
+
+        return collection;
+    };
+
+    /**
+     * Bind the synced collection on relevant resource's events
+     * @param  {object} resource
+     * @param  {NukulusCollection} collection
+     * @return {void}
+     */
+    Nukulus.prototype._bindCollectionEvents = function (resource, collection) {
+
+        this.socket.on('sync_collection', function(resourceName) {
+            if (resourceName === resource.name) {
+                // console.warn('Server request to sync');
+                collection.fetch();
+            }
+        });
+
+        resource.subscribe('create', function (data) {
+            collection.add(data);
+        });
+
+        resource.subscribe('update', function (data) {
+            var item = collection.get(data.id);
+            if (item) {
+                item.set(data);
+            }
+        });
+
+        resource.subscribe('delete', function (data) {
+            collection.remove(data.id);
+        });
+    };
+
+    /**
+     * Sync an existing Backbone.Model with a given resource
+     * @param  {Backbone.Model} model
+     * @param  {object} resource
+     * @return {void}
+     */
+    Nukulus.prototype.syncModel = function (model, resource) {
+        model.sync = NukulusSync;
+        model.resource = resource;
+
+        this._bindModelEvents(resource, model);
+    };
+
+    /**
+     * Create a new Nukulus model bound to the given resource
+     * @param  {object} resource
+     * @return {void}
+     */
+    Nukulus.prototype.bindModel = function(resource) {
+        var model = new this.Entities.Model([], {
+            resource: resource
+        });
+
+        this._bindModelEvents(resource, model);
+
+        model.fetch();
+
+        return model;
+    };
+
+    /**
+     * Bind the synced model on relevant resource's events
+     * @param  {object} resource
+     * @param  {NukulusModel} model
+     * @return {void}
+     */
+    Nukulus.prototype._bindModelEvents = function (resource, model) {
+
+        this.socket.on('sync_model', function(resourceName) {
+            if (resourceName === resource.name) {
+                model.fetch();
+            }
+        });
+
+        resource.subscribe('update', function (data) {
+            model.set(data);
+        });
+
+        resource.subscribe('delete', function (data) {
+            model.destroy();
+        });
+    };
+
+    return Nukulus;
+}));
