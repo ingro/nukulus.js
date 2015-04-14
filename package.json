@@ -2,12 +2,23 @@
   "name": "nukulus",
   "version": "0.0.1",
   "description": "Bidirectional client/server sync with Backbone.js and Data.io",
-  "main": "server.js",
+  "main": "nukulus.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "ingro85@gmail.com",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "files": [
+    "nukulus.js"
+  ],
   "license": "MIT",
+  "keywords": [
+    "backbone",
+    "sync",
+    "bidirectional"
+  ],
   "dependencies": {
     "backbone": "^1.1.2",
     "data.io": "^0.3.0",
