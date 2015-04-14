@@ -1,0 +1,11 @@
+{
+  "name": "nukulus",
+  "version": "0.0.1",
+  "main": "public/nukulus.js",
+  "ignore": [],
+  "dependencies": {
+    "backbone": ">=1.1.0",
+    "underscore": ">=1.7.0"
+  },
+  "devDependencies": {}
+}
