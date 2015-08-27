@@ -1,6 +1,6 @@
 {
   "name": "nukulus",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Bidirectional client/server sync with Backbone.js and Data.io",
   "main": "nukulus.js",
   "scripts": {
@@ -20,9 +20,6 @@
   "bugs": {
     "url": "https://github.com/ingro/nukulus.js/issues"
   },
-  "files": [
-    "nukulus.js"
-  ],
   "license": "MIT",
   "keywords": [
     "backbone",
