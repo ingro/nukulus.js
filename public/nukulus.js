@@ -1,19 +1,19 @@
 (function (factory) {
 
     // CommonJS
-    if (typeof exports == "object") {
-        module.exports = factory(require("underscore"), require("backbone"));
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = factory(require("underscore"), require("backbone"), require('jquery'));
     }
     // AMD
     else if (typeof define == "function" && define.amd) {
-        define(["underscore", "backbone"], factory);
+        define(["underscore", "backbone", "jquery"], factory);
     }
     // Browser
     else if (typeof _ !== "undefined" && typeof Backbone !== "undefined") {
-        Nukulus = factory(_, Backbone);
+        factory(_, Backbone, $);
     }
 
-}(function (_, Backbone) {
+}(function (_, Backbone, $) {
 
     "use strict";
 
