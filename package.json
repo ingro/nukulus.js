@@ -1,14 +1,24 @@
 {
   "name": "nukulus",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Bidirectional client/server sync with Backbone.js and Data.io",
   "main": "nukulus.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "ingro85@gmail.com",
+  "author": {
+    "name": "Emanuele Ingrosso",
+    "email": "ingro85@gmail.com"
+  },
   "engines": {
     "node": ">=0.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ingro/nukulus.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ingro/nukulus.js/issues"
   },
   "files": [
     "nukulus.js"
