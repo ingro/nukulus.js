@@ -17,8 +17,9 @@
 
     "use strict";
 
-    var Nukulus = function Nukulus(socket) {
+    var Nukulus = function Nukulus(socket, connection) {
         this.socket = socket;
+        this.connection = connection;
     };
 
     /**
@@ -98,7 +99,10 @@
 
             options = options || {};
 
-            this.resource = options.resource || null;
+            // this.resource = options.resource || null;
+            this.resource = options.connection.resource(options.resourceName);
+
+            // console.log(this.resource);
 
             var _this = this;
 
@@ -118,33 +122,71 @@
     };
 
     /**
-     * Sync an existing Backbone.Collection with a given resource
+     * Get the resource object from a name and a connection
+     * @param  {string} name
+     * @param  {object} connection
+     * @return {object}
+     */
+    Nukulus.prototype._getResource = function (name, connection) {
+        return connection.resource(name);
+    };
+
+    /**
+     * Bind an existing Backbone.Collection with a given resource
      * @param  {Backbone.Collection} collection
-     * @param  {object} resource
+     * @param  {string} resourceName
+     * @param  {object} options
      * @return {void}
      */
-    Nukulus.prototype.syncCollection = function (collection, resource) {
+    Nukulus.prototype.bindCollection = function (collection, resourceName, options) {
+        options = options || {};
+
+        var defaults = {
+            connection: this.connection,
+            autoSync: true
+        };
+
+        _.defaults(options, defaults);
+
         var proto = Object.getPrototypeOf(collection);
         proto.model = proto.model.extend({ sync: NukulusSync });
         collection.sync = NukulusSync;
+
+        var resource = this._getResource(resourceName, options.connection);
         collection.resource = resource;
 
         this._bindCollectionEvents(resource, collection);
+
+        if (options.autoSync) {
+            collection.fetch();
+        }
     };
 
     /**
      * Create a new Nukulus Collection bound to the given resource
-     * @param  {ojbect} resource
+     * @param  {string} resourceName
+     * @param  {object} options
      * @return {NukulusCollection}
      */
-    Nukulus.prototype.bindCollection = function (resource) {
-        var collection = new this.Entities.Collection([], {
-            resource: resource
-        });
+    Nukulus.prototype.createCollection = function (resourceName, options) {
+        options = options || {};
 
-        this._bindCollectionEvents(resource, collection);
+        var defaults = {
+            connection: this.connection,
+            autoSync: true
+        };
 
-        collection.fetch();
+        options.resourceName = resourceName;
+
+        _.defaults(options, defaults);
+
+        var collection = new this.Entities.Collection([], options);
+
+        this._bindCollectionEvents(collection.resource, collection);
+
+        if (options.autoSync) {
+            collection.fetch();
+        }
 
         return collection;
     };
@@ -181,31 +223,61 @@
     };
 
     /**
-     * Sync an existing Backbone.Model with a given resource
+     * Bind an existing Backbone.Model with a given resource
      * @param  {Backbone.Model} model
-     * @param  {object} resource
+     * @param  {string} resourceName
+     * @param  {object} options
      * @return {void}
      */
-    Nukulus.prototype.syncModel = function (model, resource) {
+    Nukulus.prototype.bindModel = function (model, resourceName, options) {
+        options = options || {};
+
+        var defaults = {
+            connection: this.connection,
+            autoSync: true
+        };
+
+        options.resourceName = resourceName;
+
+        _.defaults(options, defaults);
+
         model.sync = NukulusSync;
+
+        var resource = this._getResource(resourceName, options.connection);
         model.resource = resource;
 
         this._bindModelEvents(resource, model);
+
+        if (options.autoSync) {
+            model.fetch();
+        }
     };
 
     /**
      * Create a new Nukulus model bound to the given resource
-     * @param  {object} resource
+     * @param  {string} resourceName
+     * @param  {object} options
      * @return {void}
      */
-    Nukulus.prototype.bindModel = function(resource) {
-        var model = new this.Entities.Model([], {
-            resource: resource
-        });
+    Nukulus.prototype.createModel = function(resource, options) {
+        options = options || {};
 
-        this._bindModelEvents(resource, model);
+        var defaults = {
+            connection: this.connection,
+            autoSync: true
+        };
 
-        model.fetch();
+        options.resourceName = resourceName;
+
+        _.defaults(options, defaults);
+
+        var model = new this.Entities.Model([], options);
+
+        this._bindModelEvents(model.resource, model);
+
+        if (options.autoSync) {
+            model.fetch();
+        }
 
         return model;
     };
