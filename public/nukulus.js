@@ -40,12 +40,15 @@
 
         var deferred = $.Deferred();
 
-        if (method === 'read' && !model.id) {
+        if (method === 'read' && ! model.id) {
             method = 'list';
         }
 
-        this.resource.sync(method, model, options, function (err, res) {
+        var data = (model.serialize) ? model.serialize() : {};
+
+        this.resource.sync(method, data, options, function (err, res) {
             if (err) {
+                console.warn(err);
                 error(err);
                 deferred.reject(err);
             } else {
@@ -61,14 +64,25 @@
      * Extended version of Backbone.Model to implement Nukulus's sync
      */
     var NukulusModel = Backbone.Model.extend({
-        sync: NukulusSync,
 
-        constructor: function (models, options) {
+        hideAttr: [],
+
+        sync: function() {
+            return NukulusSync.apply(this, arguments);
+        },
+
+        constructor: function(models, options) {
             Backbone.Model.prototype.constructor.apply(this, arguments);
 
             options = options || {};
 
             this.resource = options.resource || null;
+        },
+
+        serialize: function() {
+            var obj = this.toJSON();
+
+            return _.omit(obj, this.hideAttr);
         },
 
         /**
@@ -85,8 +99,11 @@
      * Extended version of Backbone.Collection to implement Nukulu's sync
      */
     var NukulusCollection = Backbone.Collection.extend({
-        sync: NukulusSync,
         model: NukulusModel,
+
+        sync: function() {
+            return NukulusSync.apply(this, arguments);
+        },
 
         /**
          * Overrides Backbone.Collection constructor
@@ -99,17 +116,21 @@
 
             options = options || {};
 
-            // this.resource = options.resource || null;
-            this.resource = options.connection.resource(options.resourceName);
+            if (! this.resource && options.connection) {
+                 // this.resource = options.resource || null;
+                this.resource = options.connection.resource(options.resourceName);
+            }
 
-            // console.log(this.resource);
-
-            var _this = this;
+            var self = this;
 
             // Aggiungo un riferimento alla risorsa al modello aggiunto
-            this.on('add', function(model) {
-                model.setResource(_this.resource);
+            this.on('add', function (model) {
+                model.setResource(self.resource);
             });
+        },
+
+        setResource: function (resource) {
+            this.resource = resource;
         }
     });
 
@@ -148,12 +169,15 @@
 
         _.defaults(options, defaults);
 
-        var proto = Object.getPrototypeOf(collection);
-        proto.model = proto.model.extend({ sync: NukulusSync });
-        collection.sync = NukulusSync;
+        /**
+         * Not necessary anymore because it is expected that collections and models involved extends from Nukulus Model and Collection
+         */
+        // var proto = Object.getPrototypeOf(collection);
+        // proto.model = proto.model.extend({ sync: NukulusSync });
+        // collection.sync = NukulusSync;
 
         var resource = this._getResource(resourceName, options.connection);
-        collection.resource = resource;
+        collection.setResource(resource);
 
         this._bindCollectionEvents(resource, collection);
 
@@ -201,7 +225,7 @@
 
         this.socket.on('sync_collection', function(resourceName) {
             if (resourceName === resource.name) {
-                // console.warn('Server request to sync');
+                // console.warn('Server request to sync ' + resourceName);
                 collection.fetch();
             }
         });
@@ -244,7 +268,7 @@
         model.sync = NukulusSync;
 
         var resource = this._getResource(resourceName, options.connection);
-        model.resource = resource;
+        model.setResource(resource);
 
         this._bindModelEvents(resource, model);
 
