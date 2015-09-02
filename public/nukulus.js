@@ -17,11 +17,6 @@
 
     "use strict";
 
-    var Nukulus = function Nukulus(socket, connection) {
-        this.socket = socket;
-        this.connection = connection;
-    };
-
     /**
      * Overrides Backbone.sync implementation
      * @param {string} method
@@ -134,10 +129,24 @@
         }
     });
 
+    var Server = function Server(socket, connection) {
+        this.socket = socket;
+        this.connection = connection;
+    };
+
+    var Nukulus = {};
+
+    Nukulus.create = function(socket, connection) {
+        return new Server(socket, connection);
+    };
+
+    Nukulus.Model = NukulusModel;
+    Nukulus.Collection = NukulusCollection;
+
     /**
      * Basic Nukulus Entities
      */
-    Nukulus.prototype.Entities = {
+    Server.prototype.Entities = {
         Collection: NukulusCollection,
         Model: NukulusModel
     };
@@ -148,7 +157,7 @@
      * @param  {object} connection
      * @return {object}
      */
-    Nukulus.prototype._getResource = function (name, connection) {
+    Server.prototype._getResource = function (name, connection) {
         return connection.resource(name);
     };
 
@@ -159,7 +168,7 @@
      * @param  {object} options
      * @return {void}
      */
-    Nukulus.prototype.bindCollection = function (collection, resourceName, options) {
+    Server.prototype.bindCollection = function (collection, resourceName, options) {
         options = options || {};
 
         var defaults = {
@@ -192,7 +201,7 @@
      * @param  {object} options
      * @return {NukulusCollection}
      */
-    Nukulus.prototype.createCollection = function (resourceName, options) {
+    Server.prototype.createCollection = function (resourceName, options) {
         options = options || {};
 
         var defaults = {
@@ -204,7 +213,7 @@
 
         _.defaults(options, defaults);
 
-        var collection = new this.Entities.Collection([], options);
+        var collection = new NukulusCollection([], options);
 
         this._bindCollectionEvents(collection.resource, collection);
 
@@ -221,7 +230,7 @@
      * @param  {NukulusCollection} collection
      * @return {void}
      */
-    Nukulus.prototype._bindCollectionEvents = function (resource, collection) {
+    Server.prototype._bindCollectionEvents = function (resource, collection) {
 
         this.socket.on('sync_collection', function(resourceName) {
             if (resourceName === resource.name) {
@@ -253,7 +262,7 @@
      * @param  {object} options
      * @return {void}
      */
-    Nukulus.prototype.bindModel = function (model, resourceName, options) {
+    Server.prototype.bindModel = function (model, resourceName, options) {
         options = options || {};
 
         var defaults = {
@@ -283,7 +292,7 @@
      * @param  {object} options
      * @return {void}
      */
-    Nukulus.prototype.createModel = function(resource, options) {
+    Server.prototype.createModel = function(resource, options) {
         options = options || {};
 
         var defaults = {
@@ -295,7 +304,7 @@
 
         _.defaults(options, defaults);
 
-        var model = new this.Entities.Model([], options);
+        var model = new NukulusModel([], options);
 
         this._bindModelEvents(model.resource, model);
 
@@ -312,7 +321,7 @@
      * @param  {NukulusModel} model
      * @return {void}
      */
-    Nukulus.prototype._bindModelEvents = function (resource, model) {
+    Server.prototype._bindModelEvents = function (resource, model) {
 
         this.socket.on('sync_model', function(resourceName) {
             if (resourceName === resource.name) {

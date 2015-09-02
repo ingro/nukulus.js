@@ -36,7 +36,7 @@ var Nukulus = require('nukulus');
 
 var socket = io.connect('http://localhost');
 var connection = data(socket);
-var nukulus = new Nukulus(socket, connection);
+var nukulus = Nukulus.create(socket, connection);
 
 var collection = nukulus.createCollection('user');
 ```
