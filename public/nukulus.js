@@ -146,10 +146,10 @@
     /**
      * Basic Nukulus Entities
      */
-    Server.prototype.Entities = {
-        Collection: NukulusCollection,
-        Model: NukulusModel
-    };
+    // Server.prototype.Entities = {
+    //     Collection: NukulusCollection,
+    //     Model: NukulusModel
+    // };
 
     /**
      * Get the resource object from a name and a connection
