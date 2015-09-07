@@ -18,7 +18,8 @@ var BackboneCollectionStore = function(options) {
 
     opts = _.defaults(options, defaultOptions);
 
-    if (opts.collection instanceof Backbone.Collection) {
+    // if (opts.collection instanceof Backbone.Collection) {
+    if (opts.collection) {
         collection = opts.collection;
     } else {
         collection = new Backbone.Collection(opts.data);
@@ -81,7 +82,7 @@ var BackboneModelStore = function(options) {
 
     opts = _.defaults(options, defaultOptions);
 
-    if (opts.model instanceof Backbone.Model) {
+    if (opts.model) {
         model = opts.model;
     } else {
         model = new Backbone.Model(opts.data);
