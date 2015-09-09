@@ -26,7 +26,7 @@ var BackboneCollectionStore = function(options) {
     }
 
     if (opts.autoSync) {
-        collection.on('change', function() {
+        collection.on('change reset', function() {
             opts.socket.sockets.emit('sync_collection', opts.resourceName);
         });
     }

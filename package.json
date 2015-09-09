@@ -1,6 +1,6 @@
 {
   "name": "nukulus",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Bidirectional client/server sync with Backbone.js and Data.io",
   "main": "nukulus.js",
   "scripts": {
