@@ -13,7 +13,8 @@ var BackboneCollectionStore = function(options) {
         collection: false,
         autoSync: false,
         resourceName: '',
-        socket: null
+        socket: null,
+        latency: 0
     };
 
     opts = _.defaults(options, defaultOptions);
@@ -25,10 +26,12 @@ var BackboneCollectionStore = function(options) {
         collection = new Backbone.Collection(opts.data);
     }
 
+    var emitSync = _.debounce(function() {
+        opts.socket.sockets.emit('sync_collection', opts.resourceName);
+    }, opts.latency);
+
     if (opts.autoSync) {
-        collection.on('change reset update', function() {
-            opts.socket.sockets.emit('sync_collection', opts.resourceName);
-        });
+        collection.on('change reset update', emitSync);
     }
 
     return function(req, res, next) {
@@ -77,7 +80,8 @@ var BackboneModelStore = function(options) {
         model: false,
         autoSync: false,
         resourceName: '',
-        socket: null
+        socket: null,
+        latency: 0
     };
 
     opts = _.defaults(options, defaultOptions);
@@ -88,10 +92,12 @@ var BackboneModelStore = function(options) {
         model = new Backbone.Model(opts.data);
     }
 
+    var emitSync = _.debounce(function() {
+        opts.socket.sockets.emit('sync_model', opts.resourceName);
+    }, opts.latency);
+
     if (opts.autoSync) {
-        model.on('change', function() {
-            opts.socket.sockets.emit('sync_model', opts.resourceName);
-        });
+        model.on('change', emitSync);
     }
 
     return function(req, res, next) {
