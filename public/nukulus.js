@@ -41,6 +41,14 @@
 
         var data = (model.serialize) ? model.serialize() : {};
 
+        if (! this.resource) {
+            if (this.collection && this.collection.resource) {
+                this.resource = this.collection.resource;
+            } else {
+                throw new Error('No resource registered for this entity!');
+            }
+        }
+
         this.resource.sync(method, data, options, function (err, res) {
             if (err) {
                 console.warn(err);
@@ -234,8 +242,35 @@
 
         this.socket.on('sync_collection', function(resourceName) {
             if (resourceName === resource.name) {
-                // console.warn('Server request to sync ' + resourceName);
                 collection.fetch();
+            }
+        });
+
+        this.socket.on('change_collection_model', function(resourceName, model) {
+            if (resourceName === resource.name) {
+                var entity = collection.get(model.id);
+
+                if (entity) {
+                    entity.set(model);
+                } else {
+                    console.warn('Model with id ' + model.id + ' not found on collection ' + resourceName);
+                }
+            }
+        });
+
+        this.socket.on('add_collection_model', function(resourceName, model) {
+            if (resourceName === resource.name) {
+                collection.add(model);
+            }
+        });
+
+        this.socket.on('remove_collection_model', function(resourceName, model) {
+            if (resourceName === resource.name) {
+                var entity = collection.get(model.id);
+
+                if (entity) {
+                    collection.remove(entity);
+                }
             }
         });
 

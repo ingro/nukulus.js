@@ -26,12 +26,27 @@ var BackboneCollectionStore = function(options) {
         collection = new Backbone.Collection(opts.data);
     }
 
-    var emitSync = _.debounce(function() {
-        opts.socket.sockets.emit('sync_collection', opts.resourceName);
-    }, opts.latency);
+    // TODO: study a batch events send method
+    // var emitSync = _.debounce(function(model) {
+    //     opts.socket.sockets.emit('change_collection_model', opts.resourceName, model.toJSON());
+    // }, opts.latency);
 
     if (opts.autoSync) {
-        collection.on('change reset update', emitSync);
+        collection.on('reset', function() {
+            opts.socket.sockets.emit('sync_collection', opts.resourceName);
+        });
+
+        collection.on('change', function(model) {
+            opts.socket.sockets.emit('change_collection_model', opts.resourceName, model.toJSON());
+        });
+
+        collection.on('add', function(model) {
+            opts.socket.sockets.emit('add_collection_model', opts.resourceName, model.toJSON());
+        });
+
+        collection.on('remove', function(model) {
+            opts.socket.sockets.emit('remove_collection_model', opts.resourceName, model.toJSON());
+        });
     }
 
     return function(req, res, next) {
@@ -39,7 +54,9 @@ var BackboneCollectionStore = function(options) {
         var actions = {
             create: function() {
                 var model = new Backbone.Model(req.data);
-                model.set('id', uuid.v4());
+                if (! model.id) {
+                    model.set('id', uuid.v4());
+                }
                 collection.add(model);
                 res.send(model.toJSON());
             },
@@ -55,14 +72,27 @@ var BackboneCollectionStore = function(options) {
 
             update: function() {
                 var model = collection.get(req.data.id);
-                model.set(req.data);
-                res.send(model.toJSON());
+
+                if (model) {
+                    model.set(req.data);
+                    res.send(model.toJSON());
+                } else {
+                    model = new Backbone.Model(req.data);
+                    if (! model.id) {
+                        model.set('id', uuid.v4());
+                    }
+                    collection.add(model);
+                    res.send(model.toJSON());
+                }
             },
 
             delete: function() {
                 var model = collection.get(req.data.id);
-                collection.remove(model);
-                res.send(req.data);
+
+                if (model) {
+                    collection.remove(model);
+                    res.send(req.data);
+                }
             }
         };
 
@@ -117,7 +147,7 @@ var BackboneModelStore = function(options) {
             },
 
             delete: function() {
-                // I'm not sure that you destroy a model on the server
+                // I'm not sure that you can destroy a model on the server
                 model.destroy();
                 res.send(req.data);
             }
