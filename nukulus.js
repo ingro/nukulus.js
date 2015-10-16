@@ -4,12 +4,19 @@ var uuid     = require('node-uuid');
 
 var Nukulus = {};
 
+var getCleanSyncData = function(model) {
+    var data = model.toJSON();
+    var hideAttr = model.hideAttr || [];
+
+    return _.omit(data, hideAttr);
+};
+
 var BackboneCollectionStore = function(options) {
 
     var collection,
     opts,
     defaultOptions = {
-        data : [],
+        data: [],
         collection: false,
         autoSync: false,
         resourceName: '',
@@ -58,16 +65,22 @@ var BackboneCollectionStore = function(options) {
                     model.set('id', uuid.v4());
                 }
                 collection.add(model);
-                res.send(model.toJSON());
+                res.send(getCleanSyncData(model));
             },
 
             read: function() {
                 var model = collection.get(req.data.id);
-                res.send(model.toJSON());
+                res.send(getCleanSyncData(model));
             },
 
             list: function() {
-                res.send(collection.toJSON());
+                var data = [];
+
+                collection.each(function(model) {
+                    data.push(getCleanSyncData(model));
+                });
+
+                res.send(data);
             },
 
             update: function() {
@@ -75,14 +88,14 @@ var BackboneCollectionStore = function(options) {
 
                 if (model) {
                     model.set(req.data);
-                    res.send(model.toJSON());
+                    res.send(getCleanSyncData(model));
                 } else {
                     model = new Backbone.Model(req.data);
                     if (! model.id) {
                         model.set('id', uuid.v4());
                     }
                     collection.add(model);
-                    res.send(model.toJSON());
+                    res.send(getCleanSyncData(model));
                 }
             },
 
@@ -106,7 +119,7 @@ var BackboneModelStore = function(options) {
     var model,
     opts,
     defaultOptions = {
-        data : [],
+        data: [],
         model: false,
         autoSync: false,
         resourceName: '',
@@ -134,16 +147,16 @@ var BackboneModelStore = function(options) {
 
         var actions = {
             read: function() {
-                res.send(model.toJSON());
+                res.send(getCleanSyncData(model));
             },
 
             list: function() {
-                res.send(model.toJSON());
+                res.send(getCleanSyncData(model));
             },
 
             update: function() {
                 model.set(req.data);
-                res.send(model.toJSON());
+                res.send(getCleanSyncData(model));
             },
 
             delete: function() {
@@ -158,7 +171,7 @@ var BackboneModelStore = function(options) {
     };
 };
 
-BackboneStore = {
+var BackboneStore = {
     Collection: BackboneCollectionStore,
     Model: BackboneModelStore
 };
